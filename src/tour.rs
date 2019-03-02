@@ -11,6 +11,11 @@ pub struct Tour<'a> {
 impl<'a> Tour<'a> {
     pub fn new(town: &'a TownDistance, path: Vec<usize>) -> Tour<'a> {
         assert_eq!(town.len(), path.len());
+        let mut visited = vec![false; path.len()];
+        for &p in path.iter() {
+            assert!(!visited[p]);
+            visited[p] = true;
+        }
         Tour { town, path }
     }
     pub fn with_random<R: Rng>(town: &'a TownDistance, r: &mut R) -> Tour<'a> {
