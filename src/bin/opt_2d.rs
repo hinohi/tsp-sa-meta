@@ -1,5 +1,7 @@
 use std::env;
 use std::f64;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::process;
 
 use getopts::Options;
@@ -21,6 +23,8 @@ struct Args {
     exponent: f64,
     swap_rate: f64,
     iter_count: u64,
+
+    debug_out: Option<String>,
 }
 
 fn print_usage(program: &str, opts: &Options) -> ! {
@@ -42,6 +46,7 @@ fn parse_args() -> Args {
     opt.optopt("e", "exponent", "1 / (1 + x^e) (required)", "EXP");
     opt.optopt("w", "swap-rate", "swap or 2opt (default 0.0)", "SWAP");
     opt.optopt("c", "count", "iter count (default 10^4)", "COUNT");
+    opt.optopt("o", "debug", "dump path for debug", "DEBUG");
     let m = opt
         .parse(&args[1..])
         .unwrap_or_else(|f| panic!(f.to_string()));
@@ -98,6 +103,7 @@ fn parse_args() -> Args {
             .unwrap_or_else(|| "10000".to_string())
             .parse::<u64>()
             .unwrap_or_else(|f| panic!(f.to_string())),
+        debug_out: m.opt_str("debug"),
     }
 }
 
@@ -119,7 +125,6 @@ fn main() {
     mc.set_max_iteration(iter_count);
     let mut total_dist = tour.get_total_dist();
     let mut best = total_dist;
-    println!("{}", best);
     for _ in 0..iter_count {
         let a = random.gen_range(0, args.towns);
         let b = random.gen_range(0, args.towns);
@@ -142,4 +147,32 @@ fn main() {
         }
     }
     println!("{}", best);
+    if let Some(debug) = args.debug_out {
+        let mut f = BufWriter::new(File::create(debug).unwrap());
+        let path = tour.get_path();
+        for i in 1..args.towns {
+            let start = town_pos[path[i - 1]];
+            let end = town_pos[path[i]];
+            writeln!(
+                f,
+                "{} {} {} {}",
+                start[0],
+                start[1],
+                end[0] - start[0],
+                end[1] - start[1]
+            )
+            .unwrap();
+        }
+        let start = town_pos[path[args.towns - 1]];
+        let end = town_pos[path[0]];
+        writeln!(
+            f,
+            "{} {} {} {}",
+            start[0],
+            start[1],
+            end[0] - start[0],
+            end[1] - start[1]
+        )
+        .unwrap();
+    }
 }
