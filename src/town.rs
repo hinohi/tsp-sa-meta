@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::utils::order_ab;
 
 pub struct TownDistance {
@@ -42,6 +44,28 @@ fn l_inf(a: &[f64], b: &[f64]) -> f64 {
     s
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum DistType {
+    L1,
+    L2,
+    L2Sq,
+    LInf,
+}
+
+impl FromStr for DistType {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_ascii_lowercase();
+        match s.as_ref() {
+            "l1" => Ok(DistType::L1),
+            "l2" => Ok(DistType::L2),
+            "l2sq" | "l2_sq" => Ok(DistType::L2Sq),
+            "linf" | "l_inf" => Ok(DistType::LInf),
+            _ => Err(format!("unsupported type: {}", s)),
+        }
+    }
+}
+
 impl TownDistance {
     pub fn len(&self) -> usize {
         self.num
@@ -51,61 +75,21 @@ impl TownDistance {
         self.distance[b * (b + 1) / 2 + a]
     }
 
-    pub fn with_l1<T>(towns: &[T]) -> TownDistance
+    pub fn new<T>(towns: &[T], dist_type: DistType) -> TownDistance
     where
         T: AsRef<[f64]>,
     {
         let mut distance = Vec::with_capacity(towns.len() * (towns.len() + 1) / 2);
         for (i, a) in towns.iter().enumerate() {
+            let a = a.as_ref();
             for b in towns.iter().take(i + 1) {
-                distance.push(l1(a.as_ref(), b.as_ref()));
-            }
-        }
-        TownDistance {
-            num: towns.len(),
-            distance,
-        }
-    }
-
-    pub fn with_l2<T>(towns: &[T]) -> TownDistance
-    where
-        T: AsRef<[f64]>,
-    {
-        let mut distance = Vec::with_capacity(towns.len() * (towns.len() + 1) / 2);
-        for (i, a) in towns.iter().enumerate() {
-            for b in towns.iter().take(i + 1) {
-                distance.push(l2(a.as_ref(), b.as_ref()));
-            }
-        }
-        TownDistance {
-            num: towns.len(),
-            distance,
-        }
-    }
-
-    pub fn with_l2_sq<T>(towns: &[T]) -> TownDistance
-    where
-        T: AsRef<[f64]>,
-    {
-        let mut distance = Vec::with_capacity(towns.len() * (towns.len() + 1) / 2);
-        for (i, a) in towns.iter().enumerate() {
-            for b in towns.iter().take(i + 1) {
-                distance.push(l2_sq(a.as_ref(), b.as_ref()));
-            }
-        }
-        TownDistance {
-            num: towns.len(),
-            distance,
-        }
-    }
-    pub fn with_l_inf<T>(towns: &[T]) -> TownDistance
-    where
-        T: AsRef<[f64]>,
-    {
-        let mut distance = Vec::with_capacity(towns.len() * (towns.len() + 1) / 2);
-        for (i, a) in towns.iter().enumerate() {
-            for b in towns.iter().take(i + 1) {
-                distance.push(l_inf(a.as_ref(), b.as_ref()));
+                let b = b.as_ref();
+                distance.push(match dist_type {
+                    DistType::L1 => l1(a, b),
+                    DistType::L2 => l2(a, b),
+                    DistType::L2Sq => l2_sq(a, b),
+                    DistType::LInf => l_inf(a, b),
+                });
             }
         }
         TownDistance {
@@ -118,6 +102,7 @@ impl TownDistance {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::distributions::DistIter;
 
     #[test]
     fn test_l1() {
@@ -160,7 +145,7 @@ mod tests {
             [4.0, 5.0, 0.0, 17f64.sqrt()],
             [5.0, 10f64.sqrt(), 17f64.sqrt(), 0.0],
         ];
-        let dist = TownDistance::with_l2(&towns);
+        let dist = TownDistance::new(&towns, DistType::L2);
         assert_eq!(dist.len(), towns.len());
         for i in 0..towns.len() {
             for j in 0..towns.len() {
