@@ -16,12 +16,7 @@ fn l1(a: &[f64], b: &[f64]) -> f64 {
 }
 
 fn l2(a: &[f64], b: &[f64]) -> f64 {
-    let mut s = 0.0;
-    for (aa, bb) in a.iter().zip(b.iter()) {
-        let t = aa - bb;
-        s += t * t;
-    }
-    s.sqrt()
+    l2_sq(a, b).sqrt()
 }
 
 fn l2_sq(a: &[f64], b: &[f64]) -> f64 {
@@ -114,7 +109,6 @@ impl TownDistance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::distributions::DistIter;
 
     #[test]
     fn test_l1() {
