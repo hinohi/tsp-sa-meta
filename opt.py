@@ -3,14 +3,15 @@ import subprocess
 
 import optuna
 
+DIM = sys.argv[1]
+TOWNS = int(sys.argv[2])
+SIZE = int(sys.argv[3])
+DIST = sys.argv[4]
+COUNT = int(sys.argv[5])
+N = int(sys.argv[6])
 
-BIN = './target/release/opt_2d'
+BIN = f'./target/release/opt_{DIM}'
 
-TOWNS = int(sys.argv[1])
-SIZE = int(sys.argv[2])
-DIST = sys.argv[3]
-COUNT = int(sys.argv[4])
-N = int(sys.argv[5])
 
 def evaluate(temp_max, temp_min, exponent, swap_rate):
     s = 0.0
@@ -35,9 +36,9 @@ def evaluate(temp_max, temp_min, exponent, swap_rate):
 
 
 def objective(trial):
-    temp_max = trial.suggest_uniform('temp_max', 10.0, 10000.0)
-    temp_min = trial.suggest_uniform('temp_min', 2 ** -10, 10.0)
-    exponent = trial.suggest_uniform('exponent', 2 ** -10, 10.0)
+    temp_max = trial.suggest_loguniform('temp_max', 10.0, 10000.0)
+    temp_min = trial.suggest_loguniform('temp_min', 2 ** -10, temp_max)
+    exponent = trial.suggest_uniform('exponent', 2 ** -10, 5.0)
     swap_rate = trial.suggest_uniform('swap_rate', 0.0, 1.0)
     return evaluate(temp_max, temp_min, exponent, swap_rate)
 
@@ -46,7 +47,7 @@ def main():
     name = f'{TOWNS}-{SIZE}-{DIST}-{COUNT}'
     study = optuna.create_study(
         study_name=name,
-        storage=f'sqlite:///{name}.db',
+        storage=f'sqlite:///{DIM}.db',
         load_if_exists=True,
     )
     study.optimize(objective, n_trials=1000, n_jobs=4)
