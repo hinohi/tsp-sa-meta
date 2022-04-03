@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 use crate::utils::order_ab;
 
@@ -50,6 +50,18 @@ pub enum DistType {
     L2,
     L2Sq,
     LInf,
+}
+
+impl fmt::Display for DistType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use DistType::*;
+        f.write_str(match self {
+            L1 => "L1",
+            L2 => "L2",
+            L2Sq => "Squared L2",
+            LInf => "L infinity",
+        })
+    }
 }
 
 impl FromStr for DistType {

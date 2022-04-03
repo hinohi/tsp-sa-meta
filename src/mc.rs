@@ -9,7 +9,7 @@ pub trait Transition {
 
 #[inline]
 fn metropolis<R: Rng>(r: &mut R, t: f64, delta: f64) -> bool {
-    delta < 0.0 || r.gen_range(0.0, 1.0) < (-delta / t).exp()
+    delta < 0.0 || r.gen_bool((-delta / t).exp())
 }
 
 #[derive(Debug, Clone)]
