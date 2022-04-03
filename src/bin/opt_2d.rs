@@ -45,14 +45,7 @@ struct Args {
 fn main() {
     let args: Args = Args::parse();
     let mut random = Mcg128Xsl64::new(args.seed);
-    let mut town_pos = Vec::with_capacity(args.towns);
-    for _ in 0..args.towns {
-        town_pos.push([
-            random.gen_range(0.0..args.size),
-            random.gen_range(0.0..args.size),
-        ]);
-    }
-    let town = TownDistance::new(&town_pos, args.dist);
+    let town = TownDistance::from_rng(2, args.towns, args.size, args.dist, &mut random);
     let mut tour = Tour::with_random(&town, &mut random);
 
     let iter_count = args.iter_count * args.towns as u64;
@@ -86,8 +79,8 @@ fn main() {
         let mut f = BufWriter::new(File::create(debug).unwrap());
         let path = tour.get_path();
         for i in 1..args.towns {
-            let start = town_pos[path[i - 1]];
-            let end = town_pos[path[i]];
+            let start = &town.towns[path[i - 1]];
+            let end = &town.towns[path[i]];
             writeln!(
                 f,
                 "{} {} {} {}",
@@ -98,8 +91,8 @@ fn main() {
             )
             .unwrap();
         }
-        let start = town_pos[path[args.towns - 1]];
-        let end = town_pos[path[0]];
+        let start = &town.towns[path[args.towns - 1]];
+        let end = &town.towns[path[0]];
         writeln!(
             f,
             "{} {} {} {}",

@@ -1,9 +1,11 @@
 use std::{fmt, str::FromStr};
 
+use rand::Rng;
+
 use crate::utils::order_ab;
 
 pub struct TownDistance {
-    num: usize,
+    pub towns: Vec<Vec<f64>>,
     distance: Vec<f64>,
 }
 
@@ -75,17 +77,15 @@ impl FromStr for DistType {
 
 impl TownDistance {
     pub fn len(&self) -> usize {
-        self.num
+        self.towns.len()
     }
+
     pub fn dist(&self, a: usize, b: usize) -> f64 {
         let (a, b) = order_ab(a, b);
         self.distance[b * (b + 1) / 2 + a]
     }
 
-    pub fn new<T>(towns: &[T], dist_type: DistType) -> TownDistance
-    where
-        T: AsRef<[f64]>,
-    {
+    pub fn new(towns: Vec<Vec<f64>>, dist_type: DistType) -> TownDistance {
         let mut distance = Vec::with_capacity(towns.len() * (towns.len() + 1) / 2);
         for (i, a) in towns.iter().enumerate() {
             let a = a.as_ref();
@@ -99,10 +99,25 @@ impl TownDistance {
                 });
             }
         }
-        TownDistance {
-            num: towns.len(),
-            distance,
+        TownDistance { towns, distance }
+    }
+
+    pub fn from_rng<R: Rng>(
+        dim: usize,
+        towns: usize,
+        box_size: f64,
+        dist_type: DistType,
+        rng: &mut R,
+    ) -> TownDistance {
+        let mut t = Vec::with_capacity(towns);
+        for _ in 0..towns {
+            t.push(
+                (0..dim)
+                    .map(|_| rng.gen_range(0.0..box_size))
+                    .collect::<Vec<f64>>(),
+            );
         }
+        TownDistance::new(t, dist_type)
     }
 }
 
@@ -144,14 +159,19 @@ mod tests {
 
     #[test]
     fn town_distance_l2() {
-        let towns = vec![[0.0, 0.0], [0.0, 3.0], [4.0, 0.0], [3.0, 4.0]];
+        let towns = vec![
+            vec![0.0, 0.0],
+            vec![0.0, 3.0],
+            vec![4.0, 0.0],
+            vec![3.0, 4.0],
+        ];
         let cost = [
             [0.0, 3.0, 4.0, 5.0],
             [3.0, 0.0, 5.0, 10f64.sqrt()],
             [4.0, 5.0, 0.0, 17f64.sqrt()],
             [5.0, 10f64.sqrt(), 17f64.sqrt(), 0.0],
         ];
-        let dist = TownDistance::new(&towns, DistType::L2);
+        let dist = TownDistance::new(towns.clone(), DistType::L2);
         assert_eq!(dist.len(), towns.len());
         for i in 0..towns.len() {
             for j in 0..towns.len() {
