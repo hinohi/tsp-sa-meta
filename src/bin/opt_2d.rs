@@ -31,9 +31,6 @@ struct Args {
     /// 1 / (1 + x^e)
     #[clap(short, long)]
     exponent: f64,
-    /// swap or 2opt
-    #[clap(short = 'w', long, default_value_t = 0.0)]
-    swap_rate: f64,
     /// iter count
     #[clap(short = 'c', long, default_value_t = 10000)]
     iter_count: u64,
@@ -56,18 +53,10 @@ fn main() {
     for _ in 0..iter_count {
         let a = random.gen_range(0..args.towns);
         let b = random.gen_range(0..args.towns);
-        if random.gen_bool(args.swap_rate) {
-            let delta = tour.try_swap(a, b);
-            if mc.trans(&mut random, delta) {
-                tour.do_swap(a, b);
-                total_dist += delta;
-            }
-        } else {
-            let delta = tour.try_2opt(a, b);
-            if mc.trans(&mut random, delta) {
-                tour.do_2opt(a, b);
-                total_dist += delta;
-            }
+        let delta = tour.try_2opt(a, b);
+        if mc.trans(&mut random, delta) {
+            tour.do_2opt(a, b);
+            total_dist += delta;
         }
         if total_dist < best {
             total_dist = tour.get_total_dist();

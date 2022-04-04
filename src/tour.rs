@@ -38,42 +38,6 @@ impl<'a> Tour<'a> {
         self.path.clone()
     }
 
-    pub fn try_swap(&self, a: usize, b: usize) -> f64 {
-        let (a, b) = order_ab(a, b);
-        let n = self.path.len();
-        let (before, after) = if a + 1 == b {
-            (
-                self.town.dist(self.path[(a + n - 1) % n], self.path[a])
-                    + self.town.dist(self.path[b], self.path[(b + 1) % n]),
-                self.town.dist(self.path[(a + n - 1) % n], self.path[b])
-                    + self.town.dist(self.path[a], self.path[(b + 1) % n]),
-            )
-        } else if a + n - 1 == b {
-            (
-                self.town.dist(self.path[a], self.path[(a + 1) % n])
-                    + self.town.dist(self.path[(b + n - 1) % n], self.path[b]),
-                self.town.dist(self.path[b], self.path[(a + 1) % n])
-                    + self.town.dist(self.path[(b + n - 1) % n], self.path[a]),
-            )
-        } else {
-            (
-                self.town.dist(self.path[(a + n - 1) % n], self.path[a])
-                    + self.town.dist(self.path[a], self.path[(a + 1) % n])
-                    + self.town.dist(self.path[(b + n - 1) % n], self.path[b])
-                    + self.town.dist(self.path[b], self.path[(b + 1) % n]),
-                self.town.dist(self.path[(a + n - 1) % n], self.path[b])
-                    + self.town.dist(self.path[b], self.path[(a + 1) % n])
-                    + self.town.dist(self.path[(b + n - 1) % n], self.path[a])
-                    + self.town.dist(self.path[a], self.path[(b + 1) % n]),
-            )
-        };
-        after - before
-    }
-
-    pub fn do_swap(&mut self, a: usize, b: usize) {
-        self.path.swap(a, b);
-    }
-
     pub fn try_2opt(&self, a: usize, b: usize) -> f64 {
         if a == b {
             return 0.0;
@@ -119,23 +83,9 @@ mod tests {
     use crate::town::{DistType, TownDistance};
 
     #[test]
-    fn test_swap() {
-        let town_pos = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-        let town = TownDistance::new(&town_pos, DistType::L1);
-        let mut tour = Tour::new(&town, vec![0, 1, 2, 3]);
-        assert_eq!(tour.get_total_dist(), 4.0);
-        assert_eq!(tour.try_swap(0, 1), 2.0);
-        assert_eq!(tour.try_swap(1, 3), 0.0);
-        assert_eq!(tour.try_swap(3, 1), 0.0);
-        assert_eq!(tour.try_swap(0, 3), 2.0);
-        tour.do_swap(3, 1);
-        assert_eq!(tour.get_path(), vec![0, 3, 2, 1]);
-    }
-
-    #[test]
     fn test_2opt() {
-        let town_pos = [[0.0], [1.0], [2.0], [3.0], [4.0]];
-        let town = TownDistance::new(&town_pos, DistType::L2);
+        let town_pos = vec![vec![0.0], vec![1.0], vec![2.0], vec![3.0], vec![4.0]];
+        let town = TownDistance::new(town_pos, DistType::L2);
         let mut tour = Tour::new(&town, vec![0, 1, 2, 3, 4]);
         assert_eq!(tour.get_total_dist(), 8.0);
         assert_eq!(tour.try_2opt(0, 1), 0.0);
