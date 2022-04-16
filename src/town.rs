@@ -76,15 +76,6 @@ impl FromStr for DistType {
 }
 
 impl TownDistance {
-    pub fn len(&self) -> usize {
-        self.towns.len()
-    }
-
-    pub fn dist(&self, a: usize, b: usize) -> f64 {
-        let (a, b) = order_ab(a, b);
-        self.distance[b * (b + 1) / 2 + a]
-    }
-
     pub fn new(towns: Vec<Vec<f64>>, dist_type: DistType) -> TownDistance {
         let mut distance = Vec::with_capacity(towns.len() * (towns.len() + 1) / 2);
         for (i, a) in towns.iter().enumerate() {
@@ -118,6 +109,27 @@ impl TownDistance {
             );
         }
         TownDistance::new(t, dist_type)
+    }
+
+    pub fn len(&self) -> usize {
+        self.towns.len()
+    }
+
+    pub fn dist(&self, a: usize, b: usize) -> f64 {
+        let (a, b) = order_ab(a, b);
+        self.distance[b * (b + 1) / 2 + a]
+    }
+
+    pub fn avg_dist(&self) -> f64 {
+        let n = self.len() * (self.len() - 1) / 2;
+        let mut v = Vec::with_capacity(n);
+        for a in 0..self.len() {
+            for b in a + 1..self.len() {
+                v.push(self.dist(a, b));
+            }
+        }
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        v.iter().fold(0.0, |a, x| a + *x) / n as f64
     }
 }
 
@@ -178,5 +190,12 @@ mod tests {
                 assert_eq!(dist.dist(i, j), cost[i][j]);
             }
         }
+    }
+
+    #[test]
+    fn avg_dist() {
+        let towns = vec![vec![1.0], vec![2.0], vec![4.0], vec![10.0]];
+        let dist = TownDistance::new(towns, DistType::L1);
+        assert_eq!(dist.avg_dist(), (1.0 + 3.0 + 9.0 + 2.0 + 8.0 + 6.0) / 6.0);
     }
 }

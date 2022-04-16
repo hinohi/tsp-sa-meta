@@ -24,10 +24,10 @@ struct Args {
     dist: DistType,
     /// the start time, max temperature
     #[clap(short = 'M', long)]
-    temp_max: f64,
+    temp_max_factor: f64,
     /// the end time, min temperature
     #[clap(short = 'm', long)]
-    temp_min: f64,
+    temp_min_factor: f64,
     /// 1 / (1 + x^e)
     #[clap(short, long)]
     exponent: f64,
@@ -46,7 +46,12 @@ fn main() {
     let mut tour = Tour::with_random(&town, &mut random);
 
     let iter_count = args.iter_count * args.towns as u64;
-    let mut mc = PowSchedule::new(args.temp_max, args.temp_min, args.exponent);
+    let avg_dist = town.avg_dist();
+    let mut mc = PowSchedule::new(
+        avg_dist * args.temp_max_factor,
+        avg_dist * args.temp_min_factor,
+        args.exponent,
+    );
     mc.set_max_iteration(iter_count);
     let mut total_dist = tour.get_total_dist();
     let mut best = total_dist;
