@@ -1,13 +1,13 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rand::Rng;
 use rand_pcg::Mcg128Xsl64;
-use tsp_sa_meta::{DistType, MetropolisPow, Tour, TownDistance, Transition};
+use tsp_sa_meta::{metropolis, DistType, PowSchedule, Schedule, Tour, TownDistance};
 
 fn do_mc(town: &TownDistance, rng: &Mcg128Xsl64) {
     let mut rng = rng.clone();
     let mut tour = Tour::with_random(&town, &mut rng);
     let iter_count = 10000;
-    let mut mc = MetropolisPow::new(10.0, 0.01, 1.0);
+    let mut mc = PowSchedule::new(10.0, 0.01, 1.0);
     let mut total_dist = tour.get_total_dist();
     let mut best = total_dist;
     mc.set_max_iteration(iter_count);
@@ -15,7 +15,8 @@ fn do_mc(town: &TownDistance, rng: &Mcg128Xsl64) {
         let a = rng.gen_range(0..town.len());
         let b = rng.gen_range(0..town.len());
         let delta = tour.try_2opt(a, b);
-        if mc.trans(&mut rng, delta) {
+        let t = mc.get_temperature();
+        if metropolis(&mut rng, t, delta) {
             tour.do_2opt(a, b);
             total_dist += delta;
         }

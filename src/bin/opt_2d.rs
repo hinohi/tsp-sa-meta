@@ -6,7 +6,7 @@ use std::{
 use clap::Parser;
 use rand::Rng;
 use rand_pcg::Mcg128Xsl64;
-use tsp_sa_meta::{DistType, MetropolisPow, Tour, TownDistance, Transition};
+use tsp_sa_meta::{metropolis, DistType, PowSchedule, Schedule, Tour, TownDistance};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -46,7 +46,7 @@ fn main() {
     let mut tour = Tour::with_random(&town, &mut random);
 
     let iter_count = args.iter_count * args.towns as u64;
-    let mut mc = MetropolisPow::new(args.temp_max, args.temp_min, args.exponent);
+    let mut mc = PowSchedule::new(args.temp_max, args.temp_min, args.exponent);
     mc.set_max_iteration(iter_count);
     let mut total_dist = tour.get_total_dist();
     let mut best = total_dist;
@@ -54,7 +54,8 @@ fn main() {
         let a = random.gen_range(0..args.towns);
         let b = random.gen_range(0..args.towns);
         let delta = tour.try_2opt(a, b);
-        if mc.trans(&mut random, delta) {
+        let t = mc.get_temperature();
+        if metropolis(&mut random, t, delta) {
             tour.do_2opt(a, b);
             total_dist += delta;
         }

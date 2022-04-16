@@ -1,14 +1,7 @@
-use rand::Rng;
-
 pub trait Schedule {
     fn set_max_iteration(&mut self, count: u64);
     fn set_iteration(&mut self, count: u64);
     fn get_temperature(&mut self) -> f64;
-}
-
-#[inline]
-fn metropolis<R: Rng>(r: &mut R, t: f64, delta: f64) -> bool {
-    delta < 0.0 || r.gen_bool((-delta / t).exp())
 }
 
 #[derive(Debug, Clone)]
@@ -36,9 +29,11 @@ impl Schedule for PowSchedule {
     fn set_max_iteration(&mut self, count: u64) {
         self.max_iteration_count = count as f64 - 1.0;
     }
+
     fn set_iteration(&mut self, count: u64) {
         self.iteration_count = count as f64;
     }
+
     fn get_temperature(&mut self) -> f64 {
         self.iteration_count += 1.0;
         let x = (self.iteration_count - 1.0) / self.max_iteration_count;
@@ -54,9 +49,8 @@ mod tests {
     fn pow_schedule() {
         let mut m = PowSchedule::new(10.0, 0.25, 2.0);
         m.set_max_iteration(100);
-        m.set_iteration(1);
         assert_eq!(m.get_temperature(), 10.0);
-        m.set_iteration(100);
+        m.set_iteration(99);
         assert_eq!(m.get_temperature(), 0.25);
     }
 }
